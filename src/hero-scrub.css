@@ -1,0 +1,166 @@
+.hero-scroll {
+  --hero-viewport: 100svh;
+  --hero-scroll-distance: 360svh;
+  position: relative;
+  height: calc(var(--hero-viewport) + var(--hero-scroll-distance));
+}
+
+.hero-scroll > .hero {
+  position: sticky;
+  top: 0;
+  height: var(--hero-viewport);
+  min-height: 0;
+  max-height: none;
+}
+
+.hero {
+  touch-action: pan-y;
+  background: #fff;
+}
+
+.hero-dot-field {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.hero-scrub,
+.hero-scrub video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.hero-scrub {
+  z-index: 3;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.hero-gaze-video {
+  display: block;
+  object-fit: cover;
+  object-position: center center;
+  pointer-events: none;
+  opacity: calc(1 - var(--hero-sequence-opacity, 0));
+  -webkit-mask: url('/media/hero-person-mask-tight.png?v=2') center / cover no-repeat;
+  mask: url('/media/hero-person-mask-tight.png?v=2') center / cover no-repeat;
+  mask-mode: alpha;
+}
+
+.hero-film-video {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: center center;
+  pointer-events: none;
+  opacity: var(--hero-film-opacity, 0);
+}
+
+.hero-film-copy {
+  position: absolute;
+  z-index: 4;
+  top: 37%;
+  left: clamp(72px, 5vw, 112px);
+  width: min(45vw, 820px);
+  color: #302c2b;
+  font-family: 'Arial Black', 'Microsoft YaHei', sans-serif;
+  font-size: clamp(62px, 6.2vw, 128px);
+  font-weight: 900;
+  line-height: 1.13;
+  letter-spacing: -.075em;
+  white-space: nowrap;
+  opacity: var(--hero-copy-opacity, 0);
+  transform: translate3d(0, var(--hero-copy-offset, 46px), 0);
+  pointer-events: auto;
+}
+
+.hero-film-copy span { display: block; }
+.hero-film-copy { height: 2.26em; overflow: visible; }
+.hero-film-copy canvas { display: block; width: 100%; height: 100%; pointer-events: auto; }
+
+.hero-title-art-wrap {
+  opacity: var(--hero-artwork-opacity, 1);
+}
+
+.hero-inner,
+.hero-side-note {
+  opacity: var(--hero-details-opacity, 1);
+}
+
+.hero-title-art-wrap {
+  position: absolute;
+  z-index: 1;
+  top: 25%;
+  left: 50%;
+  width: min(100%, 1820px);
+  transform: translateX(-50%);
+}
+
+.hero-title-art {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1702 / 402;
+}
+
+.hero-scrub-hint {
+  position: absolute;
+  z-index: 4;
+  left: 50%;
+  bottom: 36px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 9px 14px;
+  border: 1px solid rgba(60, 53, 51, .3);
+  background: rgba(242, 241, 238, .84);
+  color: #413b39;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .14em;
+  white-space: nowrap;
+  backdrop-filter: blur(8px);
+  opacity: var(--hero-details-opacity, 1);
+}
+
+.hero-scrub-hint span { font-size: 15px; font-weight: 400; line-height: .5; }
+.hero-scrub-track { position: absolute; z-index: 3; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(48, 44, 43, .13); opacity: var(--hero-details-opacity, 1); }
+.hero-scrub-track span { display: block; width: 100%; height: 100%; background: var(--red); transform: scaleX(0); transform-origin: left center; }
+.hero-film-track { position: absolute; z-index: 3; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(48, 44, 43, .13); opacity: var(--hero-sequence-opacity, 0); }
+.hero-film-track span { display: block; width: 100%; height: 100%; background: var(--red); transform: scaleX(0); transform-origin: left center; }
+
+@media (max-width: 850px) {
+  .hero-film-copy { top: 54%; left: 5vw; font-size: clamp(42px, 8vw, 72px); }
+  .hero-gaze-video {
+    -webkit-mask-image: radial-gradient(ellipse 55% 85% at 50% 50%, #000 0 72%, transparent 100%);
+    mask-image: radial-gradient(ellipse 55% 85% at 50% 50%, #000 0 72%, transparent 100%);
+  }
+  .hero-title-art-wrap { top: 32%; width: 130%; }
+  .hero-scrub-hint { bottom: 105px; }
+}
+
+@media (max-width: 600px) {
+  .hero-film-copy {
+    top: auto;
+    bottom: 10%;
+    left: 5vw;
+    width: auto;
+    padding: 12px 16px 14px;
+    background: rgba(255, 255, 255, .88);
+    font-size: clamp(34px, 8.5vw, 48px);
+  }
+  .hero-gaze-video {
+    -webkit-mask-image: radial-gradient(ellipse 78% 82% at 50% 50%, #000 0 70%, transparent 100%);
+    mask-image: radial-gradient(ellipse 78% 82% at 50% 50%, #000 0 70%, transparent 100%);
+  }
+  .hero-title-art-wrap { top: 34%; width: 180%; }
+  .hero-scrub-hint { top: 92px; bottom: auto; padding: 8px 10px; font-size: 7px; gap: 6px; }
+}
