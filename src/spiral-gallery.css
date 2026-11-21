@@ -1,0 +1,43 @@
+.spiral-work { position: relative; padding: 0 0 90px; overflow: clip; background: #080808; color: #f3f1ee; scroll-margin-top: 0; }
+.spiral-scroll { height: calc(100svh + 12 * 42svh); }
+.spiral-sticky { position: sticky; top: 0; height: 100svh; min-height: 620px; overflow: hidden; perspective: 1200px; background: #080808; }
+.spiral-grid { position: absolute; inset: 0; opacity: .32; pointer-events: none; background-image: linear-gradient(#48484824 1px,transparent 1px),linear-gradient(90deg,#48484824 1px,transparent 1px); background-size: 36px 36px; mask-image: radial-gradient(ellipse at center,#000 10%,transparent 78%); }
+.spiral-space { position: absolute; inset: 0; transform-style: preserve-3d; }
+.spiral-card { position: absolute; top: 45%; left: 50%; display: block; width: clamp(300px,43vw,630px); aspect-ratio: 16/9; overflow: hidden; border: 1px solid #d1ceca55; border-radius: 9px; box-shadow: 0 28px 95px #000b; background: #191919; color: #fff; transform-origin: center; transform-style: preserve-3d; backface-visibility: hidden; will-change: transform,opacity; }
+.spiral-card img { width: 100%; height: 100%; object-fit: cover; transition: transform .65s cubic-bezier(.22,1,.36,1); }
+.spiral-card:hover img { transform: scale(1.045); }
+.spiral-card:after { content:''; position:absolute; inset:42% 0 0; background:linear-gradient(transparent,#000b); pointer-events:none; }
+.spiral-card-label { position: absolute; z-index: 2; left: 22px; right: 20px; bottom: 19px; display: flex; align-items: end; gap: 12px; text-shadow: 0 1px 10px #000b; }
+.spiral-card-label small { display: block; align-self: end; margin: 0 0 6px; font: 800 9px Arial,sans-serif; letter-spacing: .14em; }
+.spiral-card-label strong { margin-right: auto; font: 800 clamp(23px,2.5vw,37px)/1.1 Arial,'Microsoft YaHei',sans-serif; letter-spacing: -.04em; }
+.spiral-card-label i { font: normal 28px Arial,sans-serif; }
+.spiral-index { padding-top: 45px; }
+.spiral-index-heading { display: flex; justify-content: space-between; gap: 24px; padding: 0 0 15px; color: #aaa7a4; font: 800 11px Arial,'Microsoft YaHei',sans-serif; letter-spacing: .12em; }
+.spiral-index-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); column-gap: 5%; }
+.spiral-index-row { display: grid; grid-template-columns: 45px minmax(0,1fr) minmax(105px,.55fr) 22px; align-items: center; gap: 16px; min-height: 74px; border-top: 1px solid #555; color: #f2f0ed; transition: color .25s, padding .25s, background .25s; }
+.spiral-index-row:nth-last-child(-n+2) { border-bottom: 1px solid #555; }
+.spiral-index-row:hover { padding-inline: 12px; background: #191919; color: #fff; }
+.spiral-index-row>span:first-child,.spiral-index-row small { color: #aaa7a4; font: 800 10px Arial,sans-serif; letter-spacing: .09em; }
+.spiral-index-row strong { font: 800 clamp(18px,1.65vw,27px) Arial,'Microsoft YaHei',sans-serif; letter-spacing: -.045em; }
+.spiral-index-row small { text-align: right; }
+.spiral-index-row>span:last-child { font-size: 24px; text-align: right; }
+.spiral-all { display: flex; justify-content: space-between; align-items: center; margin-top: 82px; padding: 23px 0; border-block: 1px solid #666; font-size: 22px; font-weight: 800; }
+.spiral-all span { font-size: 34px; }
+.spiral-all:hover { color: #aaa7a4; }
+@media(max-width:700px),(prefers-reduced-motion:reduce) {
+  .spiral-scroll { height: auto; }
+  .spiral-sticky { position: relative; height: auto; min-height: 0; overflow: visible; perspective: none; }
+  .spiral-space { position: relative; inset: auto; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; width: calc(100% - 42px); margin: 32px auto 0; }
+  .spiral-card { position: relative; top: auto; left: auto; width: 100%; aspect-ratio: 16/9; transform: none!important; opacity: 1!important; visibility: visible!important; pointer-events: auto!important; border-radius: 4px; }
+  .spiral-card-label { display: block; left: 12px; right: 12px; bottom: 12px; }
+  .spiral-card-label strong { display: block; font-size: 17px; }
+  .spiral-card-label small { font-size: 7px; }
+  .spiral-card-label i { position: absolute; right: 0; bottom: 0; font-size: 18px; }
+  .spiral-index { padding-top: 75px; }
+  .spiral-index-grid { grid-template-columns: 1fr; }
+  .spiral-index-row:nth-last-child(2) { border-bottom: 0; }
+  .spiral-index-row { grid-template-columns: 30px minmax(0,1fr) 20px; gap: 9px; }
+  .spiral-index-row small { display: none; }
+  .spiral-index-heading span:last-child { display: none; }
+}
+@media(max-width:400px) { .spiral-space { grid-template-columns: 1fr; } }
