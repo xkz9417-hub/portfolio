@@ -48,11 +48,16 @@
   mask-image: none;
 }
 
-.mobile-intro-frame .hero-scrub .hero-gaze-video {
-  -webkit-mask: url('/media/hero-person-mask-tight.png?v=2') center / contain no-repeat;
-  mask: url('/media/hero-person-mask-tight.png?v=2') center / contain no-repeat;
-  mask-mode: alpha;
+.mobile-gaze-frames {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: calc(1 - var(--hero-sequence-opacity, 0));
+  pointer-events: none;
 }
+
+.mobile-intro-frame .hero-scrub.has-gaze-frame .hero-gaze-video { visibility: hidden; }
 
 .mobile-intro-frame .hero-scrub .hero-scrub-hint {
   bottom: 9px;
