@@ -30,7 +30,7 @@ const frameTime = (target, duration, fps) => {
   return clamp(Math.round(target * fps) / fps, 0, lastFrame);
 };
 
-export default function UnifiedHeroVideo({ stageRef, scrollRef }) {
+export default function UnifiedHeroVideo({ stageRef, scrollRef, viewportRef = stageRef }) {
   const compact = useMediaQuery(COMPACT_MOTION);
   const reducedMotion = useMediaQuery(REDUCED_MOTION);
   const gazeRef = useRef(null);
@@ -227,7 +227,7 @@ export default function UnifiedHeroVideo({ stageRef, scrollRef }) {
       if (isVisible() && !scrollFrame) scrollFrame = requestAnimationFrame(syncScroll);
     };
     const onResize = () => {
-      const height = compact ? stage.offsetHeight : window.innerHeight;
+      const height = compact ? viewportRef.current?.offsetHeight : window.innerHeight;
       if (height > 0 && height !== viewportHeight) {
         viewportHeight = height;
         if (!compact) scrollSection.style.setProperty('--hero-viewport', `${height}px`);
@@ -335,7 +335,7 @@ export default function UnifiedHeroVideo({ stageRef, scrollRef }) {
       film.removeEventListener('loadeddata', onFilmFrame);
       film.removeEventListener('seeked', onFilmFrame);
     };
-  }, [stageRef, scrollRef, compact, reducedMotion]);
+  }, [stageRef, scrollRef, viewportRef, compact, reducedMotion]);
 
   const gazePoster = compact ? 'hero-eyes-mobile-poster.webp' : 'hero-eyes-hd-alpha-poster.png';
   return <>

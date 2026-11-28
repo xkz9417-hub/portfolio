@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import UnifiedHeroVideo from './components/UnifiedHeroVideo';
+import MobileIntro from './components/MobileIntro';
 import FuzzyArtwork from './components/FuzzyArtwork';
 import FuzzyCopy from './components/FuzzyCopy';
 import FuzzyText from './components/FuzzyText';
@@ -19,6 +20,7 @@ import './hero-scrub.css';
 import './spiral-gallery.css';
 import './project-page.css';
 import './palette.css';
+import './mobile-intro.css';
 
 const M = `${import.meta.env.BASE_URL}media/`;
 
@@ -106,24 +108,26 @@ function App() {
     }
   }
 
-  return <div className="site-shell" ref={pageRef}>
+  return <div className={compact ? 'site-shell mobile-site' : 'site-shell'} ref={pageRef}>
     {!compact && <CursorFollower />}
     <span className="brand-avatar" aria-hidden="true"><img src={`${M}vicky-nav-avatar.webp`} alt="" width="37" height="37" /></span>
-    <header className={`site-header${menuOpen ? ' menu-open' : ''}`}>
+    <header className={`site-header${!compact && menuOpen ? ' menu-open' : ''}`}>
       <a className="brand" href="#top" aria-label="张许可，返回首页" onClick={() => setMenuOpen(false)}><span className="brand-symbol" /><span className="brand-name">VICKY XUKE<small>VISUAL PORTFOLIO</small></span></a>
-      <nav id="primary-nav" className={menuOpen ? 'nav nav-open' : 'nav'} aria-label="主导航">
+      <nav id="primary-nav" className={!compact && menuOpen ? 'nav nav-open' : 'nav'} aria-label="主导航">
         <a href="#about" onClick={() => setMenuOpen(false)}>关于我</a>
         <a href="#work" onClick={() => setMenuOpen(false)}>精选作品</a>
-        <a className="mobile-nav-contact" href="#contact" onClick={() => setMenuOpen(false)}>联系我</a>
+        {compact && <a href="#contact">联系我</a>}
       </nav>
-      <a className="header-contact" href="#contact">LET'S TALK <Arrow diagonal /></a>
-      <button className="menu-toggle" type="button" aria-label={menuOpen ? '关闭菜单' : '打开菜单'} aria-controls="primary-nav" aria-expanded={menuOpen} onClick={() => setMenuOpen(open => !open)}>{menuOpen ? '×' : '☰'}</button>
+      {!compact && <>
+        <a className="header-contact" href="#contact">LET'S TALK <Arrow diagonal /></a>
+        <button className="menu-toggle" type="button" aria-label={menuOpen ? '关闭菜单' : '打开菜单'} aria-controls="primary-nav" aria-expanded={menuOpen} onClick={() => setMenuOpen(open => !open)}>{menuOpen ? '×' : '☰'}</button>
+      </>}
     </header>
 
     <main>
-      <div className="hero-scroll" ref={heroScrollRef}>
+      {compact ? <MobileIntro /> : <div className="hero-scroll" ref={heroScrollRef}>
       <section className="hero" id="top" ref={heroRef} aria-labelledby="hero-title">
-        {!compact && <DotField
+        <DotField
           className="hero-dot-field"
           pattern="grid"
           gradientFrom="#6e716f"
@@ -140,7 +144,7 @@ function App() {
           sparkle={false}
           intro={false}
           lightMode
-        />}
+        />
         <h1 id="hero-title" className="hero-title-art-wrap" aria-label="Vicky's Archive · 张许可的视觉作品集">
           <FuzzyArtwork src={`${M}hero-title.webp`} className="hero-title-art" />
         </h1>
@@ -154,7 +158,7 @@ function App() {
         </div>
         <span className="hero-side-note">INTERACTIVE ARCHIVE — 01 / 04</span>
       </section>
-      </div>
+      </div>}
 
       <IdentityArchive />
 

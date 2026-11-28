@@ -1,0 +1,122 @@
+.mobile-hero-scroll { --hero-scroll-distance: 98svh; }
+
+.mobile-intro {
+  position: sticky;
+  top: 0;
+  display: grid;
+  place-items: center;
+  height: 100svh;
+  padding: 74px 0 68px;
+  background: #fcfcfb;
+  overflow: hidden;
+}
+
+.mobile-intro-backdrop {
+  position: absolute;
+  inset: -24px;
+  background-position: center 40%;
+  background-size: cover;
+  opacity: .28;
+  filter: blur(24px);
+  pointer-events: none;
+}
+
+.mobile-intro-frame {
+  position: relative;
+  width: 100%;
+  max-width: 1160px;
+  height: auto;
+  min-height: 0;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+}
+
+.mobile-intro-frame.hero h1.hero-title-art-wrap {
+  z-index: 1;
+  top: 29%;
+  left: 50%;
+  width: 100%;
+  transform: translateX(-50%);
+}
+
+.mobile-intro-frame .hero-scrub .hero-gaze-video,
+.mobile-intro-frame .hero-film-video {
+  inset: 0;
+  height: 100%;
+  object-fit: contain;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+.mobile-intro-frame .hero-scrub .hero-gaze-video {
+  -webkit-mask: url('/media/hero-person-mask-tight.png?v=2') center / contain no-repeat;
+  mask: url('/media/hero-person-mask-tight.png?v=2') center / contain no-repeat;
+  mask-mode: alpha;
+}
+
+.mobile-intro-frame .hero-scrub .hero-scrub-hint {
+  bottom: 9px;
+  padding: 5px 8px;
+  font-size: 10px;
+}
+
+.mobile-intro-frame .hero-film-copy {
+  bottom: 12%;
+  padding: 4px 7px;
+  font-size: clamp(16px, 4.5vw, 30px);
+}
+
+.mobile-intro-enter {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  gap: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  position: absolute;
+  right: max(20px, env(safe-area-inset-right));
+  bottom: max(14px, env(safe-area-inset-bottom));
+  color: #20232a;
+}
+
+.mobile-site .site-header {
+  padding-inline: 12px;
+  background: var(--archive-nav);
+  mix-blend-mode: normal;
+}
+
+.mobile-site .brand { gap: 6px; }
+.mobile-site .brand-symbol { width: 25px; height: 25px; }
+.mobile-site .brand-avatar { left: 12px; top: 22.5px; width: 25px; height: 25px; }
+.mobile-site .brand-name { font-size: clamp(9px, 2.6vw, 13px); letter-spacing: .04em; white-space: nowrap; }
+.mobile-site .brand-name small { font-size: clamp(6px, 1.65vw, 8px); letter-spacing: .06em; }
+
+.mobile-site .nav {
+  position: static;
+  display: flex;
+  flex-direction: row;
+  margin: 0;
+  gap: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.mobile-site .nav a {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding-inline: clamp(5px, 1.5vw, 15px);
+  font-size: clamp(11px, 3vw, 14px);
+  white-space: nowrap;
+}
+
+@media (orientation: landscape) {
+  .mobile-intro { padding: 70px 0 48px; }
+  .mobile-intro-frame { width: min(100%, calc((100svh - 118px) * 1.7778)); }
+}
+
+@media (min-width: 851px) {
+  .mobile-site .brand-avatar { top: 26.5px; }
+  .mobile-site .mobile-intro { padding-top: 78px; }
+}
