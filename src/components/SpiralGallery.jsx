@@ -33,10 +33,10 @@ export default function SpiralGallery({ projects }) {
         const d = index - focus;
         const distance = Math.abs(d);
         const visible = distance < visibleRadius;
-        const clickable = distance < (compact ? 1.45 : .8);
+        const keyboardReachable = distance < (compact ? 1.45 : .8);
         card.style.visibility = visible ? 'visible' : 'hidden';
-        card.style.pointerEvents = clickable ? 'auto' : 'none';
-        card.tabIndex = clickable ? 0 : -1;
+        card.style.pointerEvents = visible ? 'auto' : 'none';
+        card.tabIndex = keyboardReachable ? 0 : -1;
         if (nearGallery && distance < visibleRadius + 2 && covers[index].loading === 'lazy') {
           covers[index].loading = 'eager';
         }
