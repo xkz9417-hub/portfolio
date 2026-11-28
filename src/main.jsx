@@ -10,6 +10,7 @@ import SpiralGallery from './components/SpiralGallery';
 import ProjectPage from './components/ProjectPage';
 import CursorFollower from './components/CursorFollower';
 import { usePortfolioMotion } from './components/usePortfolioMotion';
+import { COMPACT_MOTION, useMediaQuery } from './components/useMediaQuery';
 import './style.css';
 import './reference-theme.css';
 import './motion.css';
@@ -43,15 +44,14 @@ const projectSlides = [
   [117, 118, 119, 120, 121], [123, 124], [125, 126],
   [127, 128, 129], [130, 131, 132], [136, 134, 135], [137, 147]
 ];
-const projectCovers = [60, 61, 62, null, 63, 64, 65, 66, 67, 69, 68, 70, 71];
 const projectVideos = {
   '07': 'ai-hug-opening.mp4',
   '09': 'beauty-ad-remake.mp4'
 };
 projects.forEach((project, index) => {
   project.slides = projectSlides[index];
-  project.href = `${import.meta.env.BASE_URL}projects/${project.n}`;
-  project.cover = projectCovers[index] ? `covers/${project.n}.jpg` : project.image;
+  project.href = `${import.meta.env.BASE_URL}projects/${project.n}/`;
+  project.cover = `work-covers/${project.n}.webp`;
   project.video = projectVideos[project.n];
 });
 
@@ -88,6 +88,7 @@ function ChapterTitle({ children }) {
 }
 
 function App() {
+  const compact = useMediaQuery(COMPACT_MOTION);
   const [copied, setCopied] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const heroRef = useRef(null);
@@ -106,22 +107,23 @@ function App() {
   }
 
   return <div className="site-shell" ref={pageRef}>
-    <CursorFollower />
-    <span className="brand-avatar" aria-hidden="true"><img src={`${M}vicky-pixel-avatar.png`} alt="" /></span>
-    <header className="site-header">
-      <a className="brand" href="#top" aria-label="张许可，返回首页"><span className="brand-symbol" /><span className="brand-name">VICKY XUKE<small>VISUAL PORTFOLIO</small></span></a>
-      <nav className={menuOpen ? 'nav nav-open' : 'nav'} aria-label="主导航">
+    {!compact && <CursorFollower />}
+    <span className="brand-avatar" aria-hidden="true"><img src={`${M}vicky-nav-avatar.webp`} alt="" width="37" height="37" /></span>
+    <header className={`site-header${menuOpen ? ' menu-open' : ''}`}>
+      <a className="brand" href="#top" aria-label="张许可，返回首页" onClick={() => setMenuOpen(false)}><span className="brand-symbol" /><span className="brand-name">VICKY XUKE<small>VISUAL PORTFOLIO</small></span></a>
+      <nav id="primary-nav" className={menuOpen ? 'nav nav-open' : 'nav'} aria-label="主导航">
         <a href="#about" onClick={() => setMenuOpen(false)}>关于我</a>
         <a href="#work" onClick={() => setMenuOpen(false)}>精选作品</a>
+        <a className="mobile-nav-contact" href="#contact" onClick={() => setMenuOpen(false)}>联系我</a>
       </nav>
       <a className="header-contact" href="#contact">LET'S TALK <Arrow diagonal /></a>
-      <button className="menu-toggle" type="button" aria-label={menuOpen ? '关闭菜单' : '打开菜单'} aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? '×' : '☰'}</button>
+      <button className="menu-toggle" type="button" aria-label={menuOpen ? '关闭菜单' : '打开菜单'} aria-controls="primary-nav" aria-expanded={menuOpen} onClick={() => setMenuOpen(open => !open)}>{menuOpen ? '×' : '☰'}</button>
     </header>
 
     <main>
       <div className="hero-scroll" ref={heroScrollRef}>
       <section className="hero" id="top" ref={heroRef} aria-labelledby="hero-title">
-        <DotField
+        {!compact && <DotField
           className="hero-dot-field"
           pattern="grid"
           gradientFrom="#6e716f"
@@ -138,14 +140,13 @@ function App() {
           sparkle={false}
           intro={false}
           lightMode
-        />
-        <div className="hero-title-art-wrap">
-          <FuzzyArtwork src={`${M}hero-title.webp`} className="hero-title-art" label="Vicky's Archive" />
-        </div>
+        />}
+        <h1 id="hero-title" className="hero-title-art-wrap" aria-label="Vicky's Archive · 张许可的视觉作品集">
+          <FuzzyArtwork src={`${M}hero-title.webp`} className="hero-title-art" />
+        </h1>
         <UnifiedHeroVideo stageRef={heroRef} scrollRef={heroScrollRef} />
         <FuzzyCopy className="hero-film-copy" lines={['耳机一戴，', '脑洞打开。']} />
         <div className="hero-inner container">
-          <h1 id="hero-title" className="sr-only">Vicky's Archive · 张许可的视觉作品集</h1>
           <div className="hero-bottom">
             <a href="#work" className="round-scroll" aria-label="向下浏览作品">↓</a>
             <span className="hero-coordinate">MOVE YOUR CURSOR <span>✳</span> EXPLORE THE ARCHIVE</span>
@@ -172,5 +173,6 @@ function App() {
   </div>;
 }
 
-const routeProject = projects.find(project => window.location.pathname === project.href);
+const currentPath = window.location.pathname.replace(/\/(?:index\.html)?$/, '');
+const routeProject = projects.find(project => currentPath === project.href.slice(0, -1));
 createRoot(document.getElementById('root')).render(routeProject ? <ProjectPage project={routeProject} projects={projects} /> : <App />);

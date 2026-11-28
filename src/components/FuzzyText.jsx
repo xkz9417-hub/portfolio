@@ -1,6 +1,5 @@
-'use client';
-
 import React, { useEffect, useRef } from 'react';
+import { COMPACT_MOTION, REDUCED_MOTION, useMediaQuery } from './useMediaQuery';
 
 const INTRO_PEAK = 2;
 const BURST_ATTACK = 70;
@@ -56,6 +55,8 @@ const FuzzyText = ({
   className = ''
 }) => {
   const canvasRef = useRef(null);
+  const compact = useMediaQuery(COMPACT_MOTION);
+  const reduceMotion = useMediaQuery(REDUCED_MOTION);
   const glitchRef = useRef(false);
   const introRef = useRef({ start: 0, done: !intro });
   const tuningRef = useRef({
@@ -104,7 +105,7 @@ const FuzzyText = ({
   ]);
 
   useEffect(() => {
-    if (!glitchMode || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+    if (!glitchMode || reduceMotion) return;
     let startTimer;
     let endTimer;
     const schedule = () => {
@@ -122,7 +123,7 @@ const FuzzyText = ({
       clearTimeout(endTimer);
       glitchRef.current = false;
     };
-  }, [glitchMode, glitchInterval, glitchDuration]);
+  }, [glitchMode, glitchInterval, glitchDuration, reduceMotion]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -139,7 +140,6 @@ const FuzzyText = ({
       : [];
     if (!canvas || !ctx || !sourceCtx || !scratchCtx || channels.some(channel => !channel.ctx)) return;
 
-    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
     const usesInk = followsText(color) && !gradientKey;
     const splitPad = splitOn ? Math.ceil(fuzzRange * 0.5) + 4 : 0;
     const padX = fuzzRange + 20 + (direction === 'vertical' ? 0 : splitPad);
@@ -171,7 +171,7 @@ const FuzzyText = ({
     const family = () => (fontFamily === 'inherit' ? getComputedStyle(canvas).fontFamily || 'sans-serif' : fontFamily);
     const font = () => `${fontWeight} ${fontPx}px ${family()}`;
     const resolveInk = () => (usesInk ? getComputedStyle(canvas).color || '#000' : color);
-    const pixelRatio = () => Math.min(window.devicePixelRatio || 1, 2);
+    const pixelRatio = () => Math.min(window.devicePixelRatio || 1, compact ? 1.5 : 2);
     const introPending = () => !introRef.current.done && tuningRef.current.intro && !reduceMotion;
 
     const measureFontSize = () => {
@@ -330,7 +330,7 @@ const FuzzyText = ({
       cols = new Int32Array(canvas.width + 1);
       canvas.style.width = `${box.cssWidth}px`;
       canvas.style.height = `${box.cssHeight}px`;
-      if (introPending() && !introRef.current.start) canvas.style.opacity = '0';
+      canvas.style.opacity = introPending() && !introRef.current.start ? '0' : '';
       ink = resolveInk();
       paintSource();
       built = true;
@@ -342,7 +342,7 @@ const FuzzyText = ({
       if (cancelled || !visible) return;
       frame = requestAnimationFrame(tick);
       const tuning = tuningRef.current;
-      const interval = 1000 / Math.max(1, tuning.fps);
+      const interval = 1000 / Math.max(1, compact ? Math.min(24, tuning.fps) : tuning.fps);
       if (now - lastFrame < interval - 1) return;
       lastFrame = Math.max(lastFrame + interval, now - interval);
       if (usesInk && now - lastInkCheck > 250) {
@@ -409,7 +409,7 @@ const FuzzyText = ({
       typeof IntersectionObserver !== 'undefined'
         ? new IntersectionObserver(([entry]) => {
             visible = entry.isIntersecting;
-            if (visible && built && !frame && !cancelled) frame = requestAnimationFrame(tick);
+            if (visible && built && !frame && !cancelled && !reduceMotion) frame = requestAnimationFrame(tick);
           })
         : null;
     observer?.observe(canvas);
@@ -473,7 +473,7 @@ const FuzzyText = ({
       }
       if (cancelled) return;
       build();
-      if (visible && !frame) frame = requestAnimationFrame(tick);
+      if (visible && !frame && !reduceMotion) frame = requestAnimationFrame(tick);
     };
 
     start();
@@ -492,7 +492,7 @@ const FuzzyText = ({
       canvas.removeEventListener('click', handleClick);
       window.removeEventListener('resize', handleResize);
     };
-  }, [text, fontSize, fontWeight, fontFamily, color, gradientKey, letterSpacing, fuzzRange, direction, splitOn]);
+  }, [text, fontSize, fontWeight, fontFamily, color, gradientKey, letterSpacing, fuzzRange, direction, splitOn, compact, reduceMotion]);
 
   return (
     <canvas

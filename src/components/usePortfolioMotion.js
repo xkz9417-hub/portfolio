@@ -1,25 +1,27 @@
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
+import { COMPACT_MOTION, REDUCED_MOTION, useMediaQuery } from './useMediaQuery';
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
 const EASE = 'power4.out';
 
 export function usePortfolioMotion(scopeRef) {
+  const compact = useMediaQuery(COMPACT_MOTION);
+  const reducedMotion = useMediaQuery(REDUCED_MOTION);
   useGSAP(() => {
     const root = scopeRef.current;
     if (!root) return undefined;
 
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const initialAnchor = ['#about', '#work', '#contact'].includes(window.location.hash)
       ? window.location.hash : null;
 
-    if (reducedMotion) {
-      if (initialAnchor) {
-        requestAnimationFrame(() => root.querySelector(initialAnchor)?.scrollIntoView({ behavior: 'instant' }));
-      }
-      return undefined;
+    if (compact || reducedMotion) {
+      const frame = initialAnchor ? requestAnimationFrame(() => {
+        root.querySelector(initialAnchor)?.scrollIntoView({ behavior: 'instant' });
+      }) : 0;
+      return () => cancelAnimationFrame(frame);
     }
 
     const indexRows = root.querySelectorAll('.spiral-index-row');
@@ -45,6 +47,6 @@ export function usePortfolioMotion(scopeRef) {
       cancelAnimationFrame(anchorFrame);
       window.removeEventListener('load', refresh);
     };
-  }, { scope: scopeRef });
+  }, { scope: scopeRef, dependencies: [compact, reducedMotion], revertOnUpdate: true });
 
 }

@@ -1,4 +1,17 @@
 import React, { useEffect, useRef } from 'react';
+import { COMPACT_MOTION, REDUCED_MOTION, useMediaQuery } from './useMediaQuery';
+import { loadSeekableVideo } from './loadSeekableVideo';
+
+const MEDIA = `${import.meta.env.BASE_URL}media/`;
+
+function clipSources(webm, mp4) {
+  const transparent = { url: MEDIA + webm, type: 'video/webm' };
+  const compatible = { url: MEDIA + mp4, type: 'video/mp4' };
+  // iOS in-app browsers need the version with the background already composited.
+  const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  return ios ? [compatible, transparent] : [transparent, compatible];
+}
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 const smooth = value => value * value * (3 - 2 * value);
@@ -11,14 +24,15 @@ const SEEK_INTERVAL = 1000 / 30;
 const LOOK_LEFT = 0.62;
 const LOOK_RIGHT = 0.2;
 
-// Both clips are encoded with every frame as a keyframe. Seeking to a frame
-// boundary avoids asking the decoder to redraw the same frame for every pixel.
+// Quantize seeks to frame boundaries so small scroll changes don't redraw the same frame.
 const frameTime = (target, duration, fps) => {
   const lastFrame = Math.max(0, Math.floor(duration * fps - 1) / fps);
   return clamp(Math.round(target * fps) / fps, 0, lastFrame);
 };
 
 export default function UnifiedHeroVideo({ stageRef, scrollRef }) {
+  const compact = useMediaQuery(COMPACT_MOTION);
+  const reducedMotion = useMediaQuery(REDUCED_MOTION);
   const gazeRef = useRef(null);
   const filmRef = useRef(null);
   const pointerBarRef = useRef(null);
@@ -31,7 +45,12 @@ export default function UnifiedHeroVideo({ stageRef, scrollRef }) {
     const film = filmRef.current;
     const pointerBar = pointerBarRef.current;
     const scrollBar = scrollBarRef.current;
-    if (!stage || !scrollSection || !gaze || !film || !pointerBar || !scrollBar) return undefined;
+    if (!stage || !scrollSection || !gaze || !film || !pointerBar || !scrollBar || reducedMotion) return undefined;
+
+    const scrollScreens = compact ? 0.9 : SCROLL_SCREENS;
+    const holdScreens = compact ? 0.08 : HOLD_SCREENS;
+    const seekInterval = compact ? 1000 / 24 : SEEK_INTERVAL;
+    const controller = new AbortController();
 
     let gazeDuration = NaN;
     let filmDuration = NaN;
@@ -40,12 +59,16 @@ export default function UnifiedHeroVideo({ stageRef, scrollRef }) {
     let gazeProgress = 0;
     let scrollProgress = 0;
     let filmLoaded = false;
+    let filmRequested = false;
+    let gazeRequested = false;
     let gazeInitialized = false;
-    let filmInitialized = false;
     let pointerInside = false;
+    let hasGazeInput = false;
     let pointerId = null;
+    let touchStartX = null;
     let intersects = false;
     let frameId = 0;
+    let scrollFrame = 0;
     let lastGazeSeek = -Infinity;
     let lastFilmSeek = -Infinity;
     let viewportHeight = 0;
@@ -53,9 +76,24 @@ export default function UnifiedHeroVideo({ stageRef, scrollRef }) {
 
     const valid = duration => Number.isFinite(duration) && duration > 0;
     const isVisible = () => !destroyed && intersects && !document.hidden;
-    const gazeActive = () => isVisible() && scrollProgress < 0.005 && pointerInside && valid(gazeDuration);
-    const filmActive = () => isVisible() && scrollProgress >= 0.005 &&
-      filmLoaded && valid(filmDuration);
+    const gazeActive = () => isVisible() && scrollProgress < 0.005 && hasGazeInput && valid(gazeDuration);
+    const filmActive = () => isVisible() && scrollProgress >= 0.005 && valid(filmDuration);
+    const requestGaze = () => {
+      if (gazeRequested) return;
+      gazeRequested = true;
+      void loadSeekableVideo(gaze, clipSources(
+        compact ? 'hero-eyes-mobile.webm' : 'hero-eyes-desktop.webm',
+        compact ? 'hero-eyes-mobile.mp4' : 'hero-eyes-hd-scrub.mp4'
+      ), controller.signal);
+    };
+    const requestFilm = () => {
+      if (filmRequested) return;
+      filmRequested = true;
+      void loadSeekableVideo(film, clipSources(
+        compact ? 'middle-film-mobile.webm' : 'middle-film-desktop.webm',
+        compact ? 'middle-film-mobile.mp4' : 'middle-film-scrub.mp4'
+      ), controller.signal);
+    };
 
     const cancelFrame = () => {
       if (frameId) cancelAnimationFrame(frameId);
@@ -69,7 +107,7 @@ export default function UnifiedHeroVideo({ stageRef, scrollRef }) {
       if (gazeActive()) {
         const desired = frameTime(gazeTarget, gazeDuration, 30);
         if (Math.abs(gaze.currentTime - desired) >= 1 / 60 && !gaze.seeking) {
-          if (now - lastGazeSeek >= SEEK_INTERVAL) {
+          if (now - lastGazeSeek >= seekInterval) {
             try { gaze.currentTime = desired; lastGazeSeek = now; } catch { /* Keep the current frame. */ }
           } else waitingForRate = true;
         }
@@ -78,7 +116,7 @@ export default function UnifiedHeroVideo({ stageRef, scrollRef }) {
       if (filmActive()) {
         const desired = frameTime(filmTarget, filmDuration, 24);
         if (Math.abs(film.currentTime - desired) >= 1 / 48 && !film.seeking) {
-          if (now - lastFilmSeek >= SEEK_INTERVAL) {
+          if (now - lastFilmSeek >= seekInterval) {
             try { film.currentTime = desired; lastFilmSeek = now; } catch { /* Keep the current frame. */ }
           } else waitingForRate = true;
         }
@@ -96,6 +134,7 @@ export default function UnifiedHeroVideo({ stageRef, scrollRef }) {
       pointerInside = false;
       if (pointerId !== null && stage.hasPointerCapture(pointerId)) stage.releasePointerCapture(pointerId);
       pointerId = null;
+      touchStartX = null;
       stage.classList.remove('is-scrubbing');
     };
     const updatePointer = event => {
@@ -106,6 +145,7 @@ export default function UnifiedHeroVideo({ stageRef, scrollRef }) {
         event.clientY >= rect.top && event.clientY <= rect.bottom;
       if (!inside) { stopPointer(); return; }
       pointerInside = true;
+      hasGazeInput = true;
       gazeProgress = clamp((event.clientX - rect.left) / rect.width, 0, 1);
       pointerBar.style.transform = `scaleX(${gazeProgress})`;
       if (valid(gazeDuration)) {
@@ -116,6 +156,11 @@ export default function UnifiedHeroVideo({ stageRef, scrollRef }) {
     const onPointerMove = event => {
       if (pointerId !== null && event.pointerId !== pointerId) return;
       if (event.pointerType === 'touch' && pointerId === null) return;
+      if (touchStartX !== null) {
+        if (Math.abs(event.clientX - touchStartX) < 10) return;
+        touchStartX = null;
+      }
+      if (scrollProgress < 0.005) requestGaze();
       updatePointer(event);
     };
     const onPointerDown = event => {
@@ -124,15 +169,17 @@ export default function UnifiedHeroVideo({ stageRef, scrollRef }) {
       pointerId = event.pointerId;
       stage.setPointerCapture(pointerId);
       stage.classList.add('is-scrubbing');
-      updatePointer(event);
+      if (event.pointerType === 'touch') touchStartX = event.clientX;
+      else updatePointer(event);
     };
     const onPointerUp = event => {
       if (event.pointerId !== pointerId) return;
-      updatePointer(event);
+      if (touchStartX === null) updatePointer(event);
       if (pointerId === null) return;
       const keepHover = event.pointerType === 'mouse' && pointerInside && scrollProgress < 0.005;
       if (stage.hasPointerCapture(pointerId)) stage.releasePointerCapture(pointerId);
       pointerId = null;
+      touchStartX = null;
       stage.classList.remove('is-scrubbing');
       if (!keepHover) pointerInside = false;
     };
@@ -141,40 +188,52 @@ export default function UnifiedHeroVideo({ stageRef, scrollRef }) {
     const onLostCapture = event => { if (event.pointerId === pointerId) stopPointer(); };
 
     const syncScroll = () => {
-      const distance = viewportHeight * SCROLL_SCREENS;
+      scrollFrame = 0;
+      if (!isVisible()) return;
+      const distance = viewportHeight * scrollScreens;
+      const offset = -scrollSection.getBoundingClientRect().top;
       scrollProgress = distance > 0 && Number.isFinite(distance)
-        ? clamp(-scrollSection.getBoundingClientRect().top / distance, 0, 1)
+        ? clamp(offset / distance, 0, 1)
         : 0;
       if (scrollProgress >= 0.005 && (pointerInside || pointerId !== null)) stopPointer();
+      if (offset > 8 && scrollProgress < 1) requestFilm();
 
       // The first visible state remains the original hero. The film takes
       // over within the same pinned viewport as scrolling begins.
-      const reveal = filmLoaded ? ramp(scrollProgress, 0, 0.02) : 0;
-      const artwork = filmLoaded ? 1 - ramp(scrollProgress, 0.005, 0.055) : 1;
+      const reveal = filmLoaded ? ramp(scrollProgress, 0.006, compact ? .18 : .045) : 0;
+      const artwork = filmLoaded
+        ? 1 - ramp(scrollProgress, compact ? .57 : .025, compact ? .73 : .09)
+        : 1;
       stage.style.setProperty('--hero-film-opacity', String(reveal));
       stage.style.setProperty('--hero-sequence-opacity', String(reveal));
       stage.style.setProperty('--hero-artwork-opacity', String(artwork));
-      stage.style.setProperty('--hero-details-opacity', String(filmLoaded ? 1 - ramp(scrollProgress, 0.01, 0.08) : 1));
-      const mobileCopy = window.innerWidth <= 600;
+      stage.style.setProperty('--hero-artwork-display', artwork > 0 ? 'block' : 'none');
+      const details = filmLoaded ? 1 - ramp(scrollProgress, 0.01, 0.08) : 1;
+      stage.style.setProperty('--hero-details-opacity', String(details));
+      stage.style.setProperty('--hero-details-visibility', details > 0 ? 'visible' : 'hidden');
       const copyReveal = filmLoaded
-        ? ramp(scrollProgress, mobileCopy ? 0.78 : 0.74, mobileCopy ? 0.96 : 0.92)
+        ? ramp(scrollProgress, compact ? 0.68 : 0.74, compact ? 0.90 : 0.92)
         : 0;
-      const transitionDistance = -scrollSection.getBoundingClientRect().top - distance;
-      const copyExit = 1 - ramp(transitionDistance, 0, Math.max(1, viewportHeight * .14));
+      const transitionDistance = offset - distance;
+      const copyExit = 1 - ramp(transitionDistance, 0, Math.max(1, viewportHeight * (compact ? .08 : .14)));
+      stage.style.setProperty('--hero-copy-display', copyReveal * copyExit > 0 ? 'block' : 'none');
       stage.style.setProperty('--hero-copy-opacity', String(copyReveal * copyExit));
       stage.style.setProperty('--hero-copy-offset', `${Math.round((1 - copyReveal) * 46)}px`);
       scrollBar.style.transform = `scaleX(${scrollProgress})`;
       if (valid(filmDuration)) filmTarget = scrollProgress * filmDuration;
       wake();
     };
+    const scheduleScroll = () => {
+      if (isVisible() && !scrollFrame) scrollFrame = requestAnimationFrame(syncScroll);
+    };
     const onResize = () => {
-      const height = window.innerHeight;
+      const height = compact ? stage.offsetHeight : window.innerHeight;
       if (height > 0 && height !== viewportHeight) {
         viewportHeight = height;
-        scrollSection.style.setProperty('--hero-viewport', `${height}px`);
-        scrollSection.style.setProperty('--hero-scroll-distance', `${Math.round(height * (SCROLL_SCREENS + HOLD_SCREENS))}px`);
+        if (!compact) scrollSection.style.setProperty('--hero-viewport', `${height}px`);
+        scrollSection.style.setProperty('--hero-scroll-distance', `${Math.round(height * (scrollScreens + holdScreens))}px`);
       }
-      syncScroll();
+      scheduleScroll();
     };
     const onGazeMetadata = () => {
       gazeDuration = Number.isFinite(gaze.duration) && gaze.duration > 0 ? gaze.duration : NaN;
@@ -184,7 +243,7 @@ export default function UnifiedHeroVideo({ stageRef, scrollRef }) {
         try { gaze.currentTime = Math.min(FIRST_FRAME, gazeDuration / 2); gazeInitialized = true; }
         catch { return; }
       }
-      gazeTarget = pointerInside
+      gazeTarget = hasGazeInput
         ? gazeDuration * (LOOK_LEFT + (LOOK_RIGHT - LOOK_LEFT) * gazeProgress)
         : gaze.currentTime;
       wake();
@@ -192,21 +251,24 @@ export default function UnifiedHeroVideo({ stageRef, scrollRef }) {
     const onFilmMetadata = () => {
       filmDuration = Number.isFinite(film.duration) && film.duration > 0 ? film.duration : NaN;
       film.pause();
-      if (!valid(filmDuration)) return;
-      if (!filmInitialized) {
-        try { film.currentTime = Math.min(FIRST_FRAME, filmDuration / 2); filmInitialized = true; }
-        catch { return; }
-      }
-      syncScroll();
+      scheduleScroll();
     };
-    const onFilmLoaded = () => { filmLoaded = true; syncScroll(); };
+    const onFilmFrame = () => {
+      // Keep the portrait in view until the film has decoded the requested frame.
+      if (!filmLoaded && film.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA &&
+          Math.abs(film.currentTime - filmTarget) < .18) {
+        filmLoaded = true;
+        scheduleScroll();
+      }
+      wake();
+    };
     const onVisibility = () => {
       if (document.hidden) {
         gaze.pause();
         film.pause();
         stopPointer();
         cancelFrame();
-      } else { syncScroll(); wake(); }
+      } else { scheduleScroll(); wake(); }
     };
 
     gaze.pause();
@@ -217,35 +279,43 @@ export default function UnifiedHeroVideo({ stageRef, scrollRef }) {
     stage.addEventListener('pointercancel', onPointerCancel);
     stage.addEventListener('pointerleave', onPointerLeave);
     stage.addEventListener('lostpointercapture', onLostCapture);
-    window.addEventListener('scroll', syncScroll, { passive: true });
+    window.addEventListener('scroll', scheduleScroll, { passive: true });
     window.addEventListener('resize', onResize, { passive: true });
-    window.addEventListener('pageshow', syncScroll);
-    window.addEventListener('load', syncScroll);
-    window.visualViewport?.addEventListener('resize', onResize, { passive: true });
+    window.addEventListener('pageshow', scheduleScroll);
     document.addEventListener('visibilitychange', onVisibility);
     gaze.addEventListener('loadedmetadata', onGazeMetadata);
     gaze.addEventListener('durationchange', onGazeMetadata);
     gaze.addEventListener('seeked', wake);
     film.addEventListener('loadedmetadata', onFilmMetadata);
     film.addEventListener('durationchange', onFilmMetadata);
-    film.addEventListener('loadeddata', onFilmLoaded);
-    film.addEventListener('seeked', wake);
+    film.addEventListener('loadeddata', onFilmFrame);
+    film.addEventListener('seeked', onFilmFrame);
 
     const observer = new IntersectionObserver(([entry]) => {
       intersects = entry.isIntersecting && entry.intersectionRatio >= 0.01;
       if (!intersects) { stopPointer(); cancelFrame(); gaze.pause(); film.pause(); }
-      else { syncScroll(); wake(); }
+      else {
+        if (!compact && window.scrollY < 8) requestGaze();
+        scheduleScroll();
+        wake();
+      }
     }, { threshold: [0, 0.01] });
     observer.observe(stage);
     onResize();
     if (gaze.readyState >= HTMLMediaElement.HAVE_METADATA) onGazeMetadata();
     if (film.readyState >= HTMLMediaElement.HAVE_METADATA) onFilmMetadata();
-    if (film.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) onFilmLoaded();
 
     return () => {
       destroyed = true;
+      controller.abort();
       stopPointer();
       cancelFrame();
+      cancelAnimationFrame(scrollFrame);
+      scrollSection.style.removeProperty('--hero-viewport');
+      scrollSection.style.removeProperty('--hero-scroll-distance');
+      for (const property of ['film-opacity', 'sequence-opacity', 'artwork-opacity', 'artwork-display', 'details-opacity', 'details-visibility', 'copy-display', 'copy-opacity', 'copy-offset']) {
+        stage.style.removeProperty(`--hero-${property}`);
+      }
       observer.disconnect();
       stage.removeEventListener('pointermove', onPointerMove);
       stage.removeEventListener('pointerdown', onPointerDown);
@@ -253,37 +323,32 @@ export default function UnifiedHeroVideo({ stageRef, scrollRef }) {
       stage.removeEventListener('pointercancel', onPointerCancel);
       stage.removeEventListener('pointerleave', onPointerLeave);
       stage.removeEventListener('lostpointercapture', onLostCapture);
-      window.removeEventListener('scroll', syncScroll);
+      window.removeEventListener('scroll', scheduleScroll);
       window.removeEventListener('resize', onResize);
-      window.removeEventListener('pageshow', syncScroll);
-      window.removeEventListener('load', syncScroll);
-      window.visualViewport?.removeEventListener('resize', onResize);
+      window.removeEventListener('pageshow', scheduleScroll);
       document.removeEventListener('visibilitychange', onVisibility);
       gaze.removeEventListener('loadedmetadata', onGazeMetadata);
       gaze.removeEventListener('durationchange', onGazeMetadata);
       gaze.removeEventListener('seeked', wake);
       film.removeEventListener('loadedmetadata', onFilmMetadata);
       film.removeEventListener('durationchange', onFilmMetadata);
-      film.removeEventListener('loadeddata', onFilmLoaded);
-      film.removeEventListener('seeked', wake);
+      film.removeEventListener('loadeddata', onFilmFrame);
+      film.removeEventListener('seeked', onFilmFrame);
     };
-  }, [stageRef, scrollRef]);
+  }, [stageRef, scrollRef, compact, reducedMotion]);
 
+  const gazePoster = compact ? 'hero-eyes-mobile-poster.webp' : 'hero-eyes-hd-alpha-poster.png';
   return <>
     <div className="hero-scrub">
-    <video ref={gazeRef} className="hero-gaze-video" muted playsInline preload="auto"
-      poster={`${import.meta.env.BASE_URL}media/hero-eyes-hd-alpha-poster.png`} aria-label="人物眼神和头部随鼠标移动">
-      <source src={`${import.meta.env.BASE_URL}media/hero-eyes-hd-alpha.webm?v=2`} type="video/webm" />
-      <source src={`${import.meta.env.BASE_URL}media/hero-eyes-hd-scrub.mp4`} type="video/mp4" />
-    </video>
-    <div className="hero-scrub-hint" aria-hidden="true"><span>←</span> MOVE / DRAG TO LOOK AROUND <span>→</span></div>
-    <div className="hero-scrub-track" aria-hidden="true"><span ref={pointerBarRef} /></div>
-    <div className="hero-film-track" aria-hidden="true"><span ref={scrollBarRef} /></div>
+      {reducedMotion ? <img className="hero-gaze-video" src={MEDIA + gazePoster} alt="" /> : <>
+        <video key={gazePoster} ref={gazeRef} className="hero-gaze-video" muted playsInline
+          preload="auto" poster={MEDIA + gazePoster} aria-label="人物眼神随横向拖动" />
+        <div className="hero-scrub-hint" aria-hidden="true"><span>←</span> {compact ? '左右拖动看眼神' : 'MOVE / DRAG TO LOOK AROUND'} <span>→</span></div>
+        <div className="hero-scrub-track" aria-hidden="true"><span ref={pointerBarRef} /></div>
+        <div className="hero-film-track" aria-hidden="true"><span ref={scrollBarRef} /></div>
+      </>}
     </div>
-    <video ref={filmRef} className="hero-film-video" muted playsInline preload="auto"
-      poster={`${import.meta.env.BASE_URL}media/middle-film-alpha-poster.png`} aria-label="人物动作随页面滚动向前和向后">
-      <source src={`${import.meta.env.BASE_URL}media/middle-film-alpha.webm?v=8`} type="video/webm" />
-      <source src={`${import.meta.env.BASE_URL}media/middle-film-scrub.mp4`} type="video/mp4" />
-    </video>
+    {!reducedMotion && <video key={String(compact)} ref={filmRef} className="hero-film-video" muted playsInline
+      preload="auto" aria-label="人物动作随页面滚动向前和向后" />}
   </>;
 }

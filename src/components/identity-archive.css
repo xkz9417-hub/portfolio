@@ -118,3 +118,19 @@
   .identity-exp-card:hover { transform: none; }
   .identity-exp-detail { animation: none; }
 }
+
+@media (max-width: 700px), (pointer: coarse) {
+  .identity-section { margin-top: 0; }
+  .identity-exp-card:hover { transform: none; }
+}
+
+@media (max-width: 700px) {
+  .identity-page { padding-top: 26px; }
+  .identity-intro-title h2 { font-size: clamp(49px, 17vw, 112px); }
+  .identity-exp-card summary { min-height: 0; padding: 16px; }
+  .identity-exp-card h3 { margin-top: 6px; }
+  .identity-exp-index i { display: none; }
+  .identity-exp-metrics { margin-top: 15px; padding-bottom: 0; gap: 12px; flex-wrap: wrap; }
+  .identity-exp-action { top: 14px; right: 16px; bottom: auto; line-height: 1; }
+  .identity-exp-detail { padding: 0 16px 16px; }
+}

@@ -4,6 +4,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
 import CountUp from './CountUp';
 import FuzzyCopy from './FuzzyCopy';
+import { COMPACT_MOTION, REDUCED_MOTION, useMediaQuery } from './useMediaQuery';
 import './identity-archive.css';
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
@@ -50,7 +51,7 @@ function IntroHeader({ preview = false }) {
       <p>你好，我是张许可，一名专注于品牌视觉、运营视觉与 AIGC 创意的视觉设计师。</p>
       <small>VISUAL DESIGNER · 2027 GRADUATE</small>
     </div>
-    <figure className="identity-portrait"><img src={PHOTO} alt={preview ? '' : '视觉设计师张许可的照片'} draggable="false" /></figure>
+    <figure className="identity-portrait"><img src={PHOTO} alt={preview ? '' : '视觉设计师张许可的照片'} draggable="false" loading="lazy" decoding="async" /></figure>
   </div>;
 }
 
@@ -77,7 +78,7 @@ function ExperienceCard({ item, index, preview = false }) {
       card.dataset.pinned = String(!pinned);
       card.open = !pinned;
     }}>
-      <span className="identity-exp-index">FILE / 00{index + 1}<i>↗</i></span>
+      <span className="identity-exp-index">FILE / 00{index + 1}<i>↗︎</i></span>
       <h3 className={index === 2 ? 'identity-company-long' : undefined}>{item.company}</h3>
       <span className="identity-exp-role">{item.role}</span>
       <div className="identity-exp-metrics">
@@ -90,6 +91,9 @@ function ExperienceCard({ item, index, preview = false }) {
 }
 
 export default function IdentityArchive() {
+  const compact = useMediaQuery(COMPACT_MOTION);
+  const reducedMotion = useMediaQuery(REDUCED_MOTION);
+  const showSequence = !compact && !reducedMotion;
   const sequenceRef = useRef(null);
   const sectionRef = useRef(null);
   const [introVisible, setIntroVisible] = useState(true);
@@ -100,7 +104,8 @@ export default function IdentityArchive() {
   }, []);
 
   useEffect(() => {
-    const update = () => setIntroVisible((sectionRef.current?.getBoundingClientRect().top ?? 0) > 2);
+    if (!showSequence) return undefined;
+    const update = () => setIntroVisible((sectionRef.current?.getBoundingClientRect().top ?? 0) >= window.innerHeight);
     update();
     window.addEventListener('scroll', update, { passive: true });
     window.addEventListener('resize', update);
@@ -108,14 +113,13 @@ export default function IdentityArchive() {
       window.removeEventListener('scroll', update);
       window.removeEventListener('resize', update);
     };
-  }, []);
+  }, [showSequence]);
 
   useGSAP(() => {
     const sequence = sequenceRef.current;
-    if (!sequence || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (!sequence) return;
     const q = selector => sequence.querySelector(selector);
     const previewCards = sequence.querySelectorAll('.identity-preview .identity-exp-card');
-    const compact = window.matchMedia('(max-width: 600px)').matches;
     gsap.set(previewCards, { y: 125, autoAlpha: 0, pointerEvents: 'none' });
     const timeline = gsap.timeline({
       defaults: { ease: 'none' },
@@ -123,7 +127,7 @@ export default function IdentityArchive() {
         trigger: sequence,
         start: 'top top',
         end: 'bottom bottom',
-        scrub: compact ? .12 : .2,
+        scrub: .2,
         invalidateOnRefresh: true
       }
     });
@@ -131,7 +135,7 @@ export default function IdentityArchive() {
     timeline
       .fromTo(q('.unlock-word'), { xPercent: -125, scale: .55, skewX: -12, autoAlpha: 0 },
         { xPercent: -7, scale: 1, skewX: 0, autoAlpha: 1, duration: .7, ease: 'power4.out' }, 0)
-      .to(q('.unlock-word'), { xPercent: -30, scale: compact ? 3 : 4, duration: .68, ease: 'power3.in' }, .65)
+      .to(q('.unlock-word'), { xPercent: -30, scale: 4, duration: .68, ease: 'power3.in' }, .65)
       .to(q('.unlock-blackout'), { scaleY: 1, duration: .16 }, 1.17)
       .set(q('.unlock-freeze'), { autoAlpha: 0 }, 1.34)
       .set(q('.identity-preview'), { autoAlpha: 1 }, 1.35)
@@ -160,10 +164,10 @@ export default function IdentityArchive() {
     });
 
     return () => timeline.scrollTrigger?.kill();
-  }, { scope: sequenceRef });
+  }, { scope: sequenceRef, dependencies: [showSequence], revertOnUpdate: true });
 
   return <>
-    <div className="unlock-sequence" ref={sequenceRef} aria-hidden="true">
+    {showSequence && <div className="unlock-sequence" ref={sequenceRef} aria-hidden="true">
       <div className="unlock-stage">
         <div className="unlock-freeze">
           <div className="unlock-word">WHO IS<br />VICKY?</div>
@@ -175,14 +179,14 @@ export default function IdentityArchive() {
           <div className="identity-experience-grid">{experience.map((item, index) => <ExperienceCard key={item.company} item={item} index={index} preview />)}</div>
         </div></div>
       </div>
-    </div>
+    </div>}
 
-    {introVisible && <button className="unlock-skip" type="button" onClick={skip}>SKIP INTRO <span>↗</span></button>}
+    {showSequence && introVisible && <button className="unlock-skip" type="button" onClick={skip}>SKIP INTRO <span>↗</span></button>}
 
     <section className="identity-section" id="about" ref={sectionRef} aria-labelledby="identity-about-title">
       <div className="identity-page container">
         <IntroHeader />
-        <div className="identity-experience-topline"><span>SELECTED EXPERIENCE / 01—04</span><span>HOVER OR CLICK TO OPEN FILES</span></div>
+        <div className="identity-experience-topline"><span>SELECTED EXPERIENCE / 01—04</span><span>{compact ? '点击查看经历' : 'HOVER OR CLICK TO OPEN FILES'}</span></div>
         <div className="identity-experience-grid">
           {experience.map((item, index) => <ExperienceCard key={item.company} item={item} index={index} />)}
         </div>

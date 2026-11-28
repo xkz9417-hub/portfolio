@@ -34,10 +34,23 @@ button:focus-visible, a:focus-visible { outline-color: var(--archive-accent); }
 .header-contact { color: #fff; border-color: currentColor; mix-blend-mode: normal; }
 .header-contact:hover { color: #000; background: #fff; border-color: #fff; }
 .menu-toggle { color: #fff; mix-blend-mode: normal; }
+.mobile-nav-contact { display: none; }
 @media (max-width: 1250px) { .brand-avatar { left: 36px; } }
 @media (max-width: 850px) { .brand-avatar { left: 21px; } }
 @media (max-width: 850px) { .nav { background: var(--archive-nav); border-color: var(--archive-border); } }
 @media (max-width: 600px) { .site-header { background: transparent; } .brand-avatar { top: 16.5px; } }
+
+@media (max-width: 850px) {
+  html { scroll-padding-top: 70px; }
+  .site-header, .site-header.menu-open { background: var(--archive-nav); mix-blend-mode: normal; }
+  .menu-toggle { width: 44px; min-height: 44px; margin-right: -7px; }
+  .nav.nav-open { gap: 0; margin-inline: 0; padding-block: 8px; }
+  .nav a { display: flex; align-items: center; min-height: 44px; font-size: 15px; }
+}
+
+@media (max-width: 600px) {
+  .nav .mobile-nav-contact { display: flex; }
+}
 
 /* The opening artwork and source film were designed for a light field. */
 .hero { color: var(--archive-bg); }
@@ -126,7 +139,11 @@ button:focus-visible, a:focus-visible { outline-color: var(--archive-accent); }
 .contact-title-text { display: inline-block; }
 .contact .chapter-line i { position: static; font-size: .42em; }
 @media (max-width: 600px) {
-  .contact .chapter-title { font-size: clamp(55px, 12vw, 82px); }
+  .contact .chapter-title { font-size: clamp(35px, 11vw, 66px); }
+  .contact .chapter-line { display: flex; align-items: end; }
+  .contact-title-text { min-width: 0; }
+  .contact-title-text canvas { display: block; margin-inline: -52px -43px; }
+  .contact h2 span { display: block; }
 }
 .fuzzy-copy > span { display: block; }
 .footer a:hover { color: var(--archive-accent); }
