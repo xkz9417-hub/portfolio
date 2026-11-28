@@ -1,10 +1,11 @@
 .spiral-work { position: relative; padding: 0 0 90px; overflow: clip; background: #080808; color: #f3f1ee; scroll-margin-top: 0; }
 .spiral-scroll { height: calc(100svh + 12 * 42svh); }
-.spiral-sticky { position: sticky; top: 0; height: 100svh; min-height: 620px; overflow: hidden; perspective: 1200px; background: #080808; }
+.spiral-sticky { position: sticky; top: 0; height: 100svh; min-height: 620px; overflow: hidden; background: #080808; }
 .spiral-grid { position: absolute; inset: 0; opacity: .32; pointer-events: none; background-image: linear-gradient(#48484824 1px,transparent 1px),linear-gradient(90deg,#48484824 1px,transparent 1px); background-size: 36px 36px; mask-image: radial-gradient(ellipse at center,#000 10%,transparent 78%); }
-.spiral-space { position: absolute; inset: 0; transform-style: preserve-3d; }
-.spiral-card { position: absolute; top: 45%; left: 50%; display: block; width: clamp(300px,43vw,630px); aspect-ratio: 16/9; overflow: hidden; border: 1px solid #d1ceca55; border-radius: 9px; box-shadow: 0 28px 95px #000b; background: #191919; color: #fff; transform-origin: center; transform-style: preserve-3d; backface-visibility: hidden; will-change: transform,opacity; }
-.spiral-card img { width: 100%; height: 100%; object-fit: cover; transition: transform .65s cubic-bezier(.22,1,.36,1); }
+.spiral-space { position: absolute; inset: 0; }
+.spiral-card { position: absolute; top: 45%; left: 50%; display: block; width: clamp(300px,43vw,630px); aspect-ratio: 16/9; overflow: hidden; border: 1px solid #d1ceca55; border-radius: 9px; box-shadow: 0 28px 95px #000b; background: #191919; color: #fff; transform-origin: center; }
+.spiral-card img { width: 100%; height: 100%; object-fit: cover; transition: transform .65s cubic-bezier(.22,1,.36,1); pointer-events: none; }
+.spiral-card-label { pointer-events: none; }
 .spiral-card:hover img { transform: scale(1.045); }
 .spiral-card:after { content:''; position:absolute; inset:42% 0 0; background:linear-gradient(transparent,#000b); pointer-events:none; }
 .spiral-card-label { position: absolute; z-index: 2; left: 22px; right: 20px; bottom: 19px; display: flex; align-items: end; gap: 12px; text-shadow: 0 1px 10px #000b; }
@@ -24,8 +25,22 @@
 .spiral-all { display: flex; justify-content: space-between; align-items: center; margin-top: 82px; padding: 23px 0; border-block: 1px solid #666; font-size: 22px; font-weight: 800; }
 .spiral-all span { font-size: 34px; }
 .spiral-all:hover { color: #aaa7a4; }
+.spiral-index-jump {
+  position: absolute;
+  z-index: 110;
+  right: 16px;
+  bottom: max(12px, env(safe-area-inset-bottom));
+  display: grid;
+  place-items: center;
+  min-height: 44px;
+  padding-inline: 14px;
+  background: #fff;
+  color: #111;
+  font-size: 13px;
+  font-weight: 800;
+}
 @media(max-width:700px),(pointer:coarse),(prefers-reduced-motion:reduce) {
-  .spiral-card { border-radius: 4px; box-shadow: none; will-change: auto; }
+  .spiral-card { border-radius: 4px; box-shadow: none; }
   .spiral-card-label { display: block; left: 12px; right: 12px; bottom: 12px; }
   .spiral-card-label strong { display: block; padding-right: 20px; font-size: 17px; }
   .spiral-card-label small { font-size: 7px; }
@@ -41,23 +56,9 @@
 @media (max-width:700px), (pointer:coarse) {
   .spiral-work { --spiral-top: 78px; }
   .spiral-scroll { height: calc(100svh - var(--spiral-top) + 12 * 25svh); }
-  .spiral-sticky { top: var(--spiral-top); height: calc(100svh - var(--spiral-top)); min-height: 0; perspective: 950px; }
+  .spiral-sticky { top: var(--spiral-top); height: calc(100svh - var(--spiral-top)); min-height: 0; }
   .spiral-card { width: min(78vw, 500px, 121svh - var(--spiral-top)); }
   .spiral-index { padding-top: 36px; }
-  .spiral-index-jump {
-    position: absolute;
-    z-index: 110;
-    right: 16px;
-    bottom: max(12px, env(safe-area-inset-bottom));
-    display: grid;
-    place-items: center;
-    min-height: 44px;
-    padding-inline: 14px;
-    background: #fff;
-    color: #111;
-    font-size: 13px;
-    font-weight: 800;
-  }
 }
 
 @media (max-width:850px) {
@@ -66,7 +67,7 @@
 
 @media (prefers-reduced-motion:reduce) {
   .spiral-scroll { height: auto; }
-  .spiral-sticky { position: relative; top: auto; height: auto; min-height: 0; overflow: visible; perspective: none; }
+  .spiral-sticky { position: relative; top: auto; height: auto; min-height: 0; overflow: visible; }
   .spiral-space { position: relative; inset: auto; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; width: calc(100% - 42px); margin: 32px auto 0; }
   .spiral-card { position: relative; top: auto; left: auto; width: 100%; }
 }

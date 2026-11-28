@@ -18,6 +18,7 @@ export default function SpiralGallery({ projects }) {
     const cards = [...section.querySelectorAll('.spiral-card')];
     const covers = cards.map(card => card.querySelector('img'));
     const visibleRadius = compact ? 2.3 : 3.45;
+    const perspective = compact ? 950 : 1200;
     let side = 0;
     let stride = 0;
     let nearGallery = false;
@@ -43,7 +44,8 @@ export default function SpiralGallery({ projects }) {
         if (!visible) return;
         const x = Math.sin(d * 1.08) * side;
         const angle = compact ? 10 : 16;
-        card.style.transform = `translate(-50%, -50%) translate3d(${x}px, ${d * stride}px, ${-distance * 125}px) rotateY(${-d * angle}deg) rotateZ(${Math.sin(d * .8) * 7}deg) scale(${Math.max(.58, 1 - distance * .13)})`;
+        // Project each link independently so painting and hit testing share the same z-index order.
+        card.style.transform = `translate(-50%, -50%) perspective(${perspective}px) translate3d(${x}px, ${d * stride}px, ${-distance * 125}px) rotateY(${-d * angle}deg) rotateZ(${Math.sin(d * .8) * 7}deg) scale(${Math.max(.58, 1 - distance * .13)})`;
         card.style.opacity = String(Math.max(0, 1 - distance / visibleRadius));
         card.style.zIndex = String(Math.round(100 - distance * 10));
       });
@@ -89,11 +91,11 @@ export default function SpiralGallery({ projects }) {
           className="spiral-card" href={project.href} key={project.n}
           aria-label={`查看项目 ${project.n}：${project.title}`}
           style={{ '--card-index': index }}>
-          <img src={`${import.meta.env.BASE_URL}media/${project.cover ?? project.image}`} alt={project.title} loading="lazy" decoding="async" />
+          <img src={`${import.meta.env.BASE_URL}media/${project.cover ?? project.image}`} alt={project.title} loading="lazy" decoding="async" draggable="false" />
           <span className="spiral-card-label"><small>PROJECT / {project.n}</small><strong>{project.title}</strong><i>↗︎</i></span>
         </a>)}
       </div>
-      {compact && !reducedMotion && <a className="spiral-index-jump" href="#project-index">查看全部作品 ↓</a>}
+      {!reducedMotion && <a className="spiral-index-jump" href="#project-index">查看全部作品 ↓</a>}
     </div>
     </div>
     <div className="spiral-index container" id="project-index" aria-label="十三个项目列表">
